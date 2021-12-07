@@ -42,3 +42,28 @@ class Stock(FinancialProduct):
     def evolve(self):
         self.current_value += np.random.normal(self._mu, self._sigma)
 
+
+class StockGeometricBrownianMotion(FinancialProduct):
+    """Stocks with Geometric Brownian Motion dynamics"""
+    def __init__(self, name, initial_value, mu, sigma):
+        super().__init__(name, initial_value)
+        self._mu = mu
+        self._sigma = sigma
+
+    def evolve(self):
+        self.current_value *= np.exp(np.random.normal(self._mu, self._sigma))
+
+
+class StockMeanRevertingGeometricBrownianMotion(FinancialProduct):
+    """Stocks with 2 components, Mean reverting component to a equilibrium price and
+    Geometric Brownian Motion dynamics"""
+    def __init__(self, name, initial_value, mu, sigma, equilibrium_price, mean_reversion_speed):
+        super().__init__(name, initial_value)
+        self._mu = mu
+        self._sigma = sigma
+        self._equilibrium_price = equilibrium_price
+        self._mean_reversion_speed = mean_reversion_speed
+
+    def evolve(self):
+        self.current_value *= np.exp(np.random.normal(self._mu + self._mean_reversion_speed *
+                                     (self._equilibrium_price - self.current_value), self._sigma))

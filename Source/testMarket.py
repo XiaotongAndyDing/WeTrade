@@ -1,6 +1,6 @@
 from unittest import TestCase
-
-from Source.Market import Stock, Market
+import numpy as np
+from Source.Market import Stock, Market, StockGeometricBrownianMotion, StockMeanRevertingGeometricBrownianMotion
 
 
 class TestMarket(TestCase):
@@ -32,4 +32,48 @@ class TestStock(TestCase):
         # we set mu = 0, sigma = 0 in stock noise, so the stock price is the same after evolution.
         self.assertAlmostEqual(100, stock_test.check_value(), delta=1e-6)
 
+        stock_test = Stock('stock_test', 100, 1, 0)
+        stock_test.evolve()
+        self.assertAlmostEqual(101, stock_test.check_value(), delta=1e-6)
+
+
+class TestStockGeometricBrownianMotion(TestCase):
+    def test_evolve(self):
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 0)
+        stock_test.evolve()
+        self.assertAlmostEqual(100, stock_test.check_value(), delta=1e-6)
+
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0.01, 0)
+        stock_test.evolve()
+        self.assertAlmostEqual(100 * np.exp(0.01), stock_test.check_value(), delta=1e-6)
+
+        stock_test._mu = 0.05
+        stock_test.evolve()
+        self.assertAlmostEqual(100 * np.exp(0.01) * np.exp(0.05), stock_test.check_value(), delta=1e-6)
+
+
+class TestStockMeanRevertingGeometricBrownianMotion(TestCase):
+    def test_evolve(self):
+        stock_test = StockMeanRevertingGeometricBrownianMotion('stock_mr_gbm_test', 100, 0, 0,
+                                                               equilibrium_price=100, mean_reversion_speed=0)
+        stock_test.evolve()
+        self.assertAlmostEqual(100, stock_test.check_value(), delta=1e-6)
+
+        stock_test = StockMeanRevertingGeometricBrownianMotion('stock_mr_gbm_test', 200, 0, 0,
+                                                               equilibrium_price=100, mean_reversion_speed=0.001)
+
+        # initial stock price is higher than the equilibrium price. After long time, stock price is very close to the
+        # equilibrium price
+        for _ in range(100):
+            stock_test.evolve()
+        self.assertAlmostEqual(100, stock_test.check_value(), delta=0.01)
+
+        stock_test = StockMeanRevertingGeometricBrownianMotion('stock_mr_gbm_test', 50, 0, 0,
+                                                               equilibrium_price=100, mean_reversion_speed=0.001)
+
+        # initial stock price is lower than the equilibrium price. After long time, stock price is very close to the
+        # equilibrium price
+        for _ in range(100):
+            stock_test.evolve()
+        self.assertAlmostEqual(100, stock_test.check_value(), delta=0.01)
 
