@@ -1,4 +1,5 @@
 from typing import List
+from collections import OrderedDict
 
 import numpy as np
 
@@ -7,12 +8,19 @@ class FinancialProduct(object):
     def __init__(self, name, initial_value):
         self.name = name
         self.current_value = initial_value
+        self.price_record = OrderedDict()
 
     def check_value(self):
         return self.current_value
 
     def evolve(self):
         pass
+
+    def mark_current_value_to_record(self, time):
+        if time in self.price_record:
+            raise Exception(f'There has been a price record in time {time}')
+        else:
+            self.price_record[time] = self.current_value
 
 
 class Market(object):
@@ -31,6 +39,10 @@ class Market(object):
     def evolve(self):
         for financial_product in self._financial_product_dict.values():
             financial_product.evolve()
+
+    def mark_current_value_to_record(self, time):
+        for financial_product in self._financial_product_dict.values():
+            financial_product.mark_current_value_to_record(time)
 
 
 class Stock(FinancialProduct):
