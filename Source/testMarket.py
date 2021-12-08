@@ -1,7 +1,7 @@
 from unittest import TestCase
 import numpy as np
 from Source.Market import Stock, Market, StockGeometricBrownianMotion, StockMeanRevertingGeometricBrownianMotion, \
-    Derivative, Option, EuropeanCallOption
+    Derivative, Option, EuropeanCallOption, EuropeanPutOption
 
 
 class TestMarket(TestCase):
@@ -190,3 +190,68 @@ class TestEuropeanCallOption(TestCase):
         self.assertAlmostEqual(0.657, option_test.delta, delta=0.001)
         self.assertAlmostEqual(0.004, option_test.gamma, delta=0.001)
         self.assertAlmostEqual(36.758, option_test.vega, delta=0.001)
+
+
+class TestEuropeanPutOption(TestCase):
+    def test_evolve(self):
+        # Limit Case: Deep OTM Option, Stock Volatility is very small.
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1e-6)
+        option_test = EuropeanPutOption('option_test', [stock_test], 90, 10)
+
+        self.assertAlmostEqual(0, option_test.current_value, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.delta, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.gamma, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.vega, delta=1e-6)
+
+        # Limit Case: Deep OTM Option, Stock Volatility is very small.
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1e-6)
+        option_test = EuropeanPutOption('option_test', [stock_test], 110, 10)
+
+        self.assertAlmostEqual(10, option_test.current_value, delta=1e-6)
+        self.assertAlmostEqual(-1, option_test.delta, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.gamma, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.vega, delta=1e-6)
+
+        # Limit Case: Option, Stock Volatility is very large.
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1e6)
+        option_test = EuropeanPutOption('option_test', [stock_test], 110, 10)
+
+        self.assertAlmostEqual(110, option_test.current_value, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.delta, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.gamma, delta=1e-6)
+        self.assertAlmostEqual(0, option_test.vega, delta=1e-6)
+
+        # Limit Case: Already Expire.
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1e-6)
+        option_test = EuropeanPutOption('option_test', [stock_test], 110, 0)
+        self.assertAlmostEqual(10, option_test.current_value, delta=1e-6)
+        option_test = EuropeanPutOption('option_test', [stock_test], 90, 0)
+        self.assertAlmostEqual(0, option_test.current_value, delta=1e-6)
+
+        # Normal Case: ATM.
+        # Online Option Price Calculator: https://goodcalculators.com/black-scholes-calculator/
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanPutOption('option_test', [stock_test], 100, 252)  # 252 business days per year
+
+        self.assertAlmostEqual(38.292, option_test.current_value, delta=0.001)
+        self.assertAlmostEqual(-0.309, option_test.delta, delta=0.001)
+        self.assertAlmostEqual(0.004, option_test.gamma, delta=0.001)
+        self.assertAlmostEqual(35.207, option_test.vega, delta=0.001)
+
+        # Normal Case: ITM.
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanPutOption('option_test', [stock_test], 110, 252)  # 252 business days per year
+
+        self.assertAlmostEqual(45.375, option_test.current_value, delta=0.001)
+        self.assertAlmostEqual(-0.343, option_test.delta, delta=0.001)
+        self.assertAlmostEqual(0.004, option_test.gamma, delta=0.001)
+        self.assertAlmostEqual(36.758, option_test.vega, delta=0.001)
+
+        # Normal Case: OTM.
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanPutOption('option_test', [stock_test], 90, 252)  # 252 business days per year
+
+        self.assertAlmostEqual(31.563, option_test.current_value, delta=0.001)
+        self.assertAlmostEqual(-0.272, option_test.delta, delta=0.001)
+        self.assertAlmostEqual(0.003, option_test.gamma, delta=0.001)
+        self.assertAlmostEqual(33.215, option_test.vega, delta=0.001)

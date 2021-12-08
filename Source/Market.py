@@ -145,3 +145,36 @@ class EuropeanCallOption(Option):
         self.delta = norm.cdf(d_1)
         self.gamma = norm.pdf(d_1) / (self.underlying.current_value * annual_volatility * np.sqrt(time_to_maturity))
         self.vega = self.underlying.current_value * norm.pdf(d_1) * np.sqrt(time_to_maturity)
+
+
+class EuropeanPutOption(Option):
+    def __init__(self, name, underlyings, strike, expiry):
+        super().__init__(name, underlyings, strike, expiry)
+        self.evolve(0)
+
+    def evolve(self, time=0):
+        if not hasattr(self.underlying, 'sigma'):
+            raise Exception('underlying should have volatility parameter sigma')
+
+        time_to_maturity = (self.expiry - time) / FinancialProduct.BUSINESS_DAYS_PER_YEAR
+        annual_volatility = self.underlying.sigma * np.sqrt(FinancialProduct.BUSINESS_DAYS_PER_YEAR)
+
+        if time_to_maturity < 0:
+            raise Exception('Option has expired')
+        elif time_to_maturity < 1e-6:
+            self.delta = 0
+            self.gamma = 0
+            self.vega = 0
+            self.current_value = max(0, self.strike - self.underlying.current_value)
+            return
+
+        d_1 = (np.log(self.underlying.current_value / self.strike) +
+               0.5 * np.power(annual_volatility, 2) * time_to_maturity) / \
+              (annual_volatility * np.sqrt(time_to_maturity))
+
+        d_2 = d_1 - (annual_volatility * np.sqrt(time_to_maturity))
+
+        self.current_value = self.strike * norm.cdf(-d_2) - self.underlying.current_value * norm.cdf(-d_1)
+        self.delta = norm.cdf(d_1) - 1
+        self.gamma = norm.pdf(d_1) / (self.underlying.current_value * annual_volatility * np.sqrt(time_to_maturity))
+        self.vega = self.underlying.current_value * norm.pdf(d_1) * np.sqrt(time_to_maturity)
