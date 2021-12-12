@@ -1,7 +1,7 @@
 from typing import List, Dict
 from collections import OrderedDict
 from scipy.stats import norm
-
+import copy
 import numpy as np
 
 
@@ -17,7 +17,19 @@ class FinancialProduct(object):
         return self.current_value
 
     def evolve(self, time=0):
+        """evolve is a method for Financial products to update its price """
         pass
+
+    def simulate_price_moves(self, time=0, simulation_horizon=1, num_of_trails=1e3):
+        """the price simulation method simulate future prices based on Monte Carlo Simulation"""
+        """It can price a financial product in P measure (Real measure, historical measure)"""
+        future_price_list = []
+        for _ in range(int(num_of_trails)):
+            tamp_asset_in_one_realization = copy.deepcopy(self)
+            for time_in_simulation in range(time + 1, time + int(simulation_horizon) + 1):
+                tamp_asset_in_one_realization.evolve(time=time_in_simulation)
+            future_price_list.append(tamp_asset_in_one_realization.current_value)
+        return future_price_list
 
     def mark_current_value_to_record(self, time):
         if time in self.price_record:
@@ -119,6 +131,8 @@ class EuropeanCallOption(Option):
 
     def evolve(self, time=0):
         """https://www.investopedia.com/terms/b/blackscholes.asp"""
+        """The evolve method prices derivative under the Arbitrage Free Assumption"""
+        """In other words, it prices a financial product in Q measure"""
         if not hasattr(self.underlying, 'sigma'):
             raise Exception('underlying should have volatility parameter sigma')
 
