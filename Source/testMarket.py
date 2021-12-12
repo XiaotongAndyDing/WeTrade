@@ -1,7 +1,7 @@
 from unittest import TestCase
 import numpy as np
 from Source.Market import Stock, Market, StockGeometricBrownianMotion, StockMeanRevertingGeometricBrownianMotion, \
-    Derivative, Option, EuropeanCallOption, EuropeanPutOption
+    Derivative, Option, EuropeanCallOption, EuropeanPutOption, StockTrendingGeometricBrownianMotion
 
 
 class TestMarket(TestCase):
@@ -118,6 +118,27 @@ class TestStockMeanRevertingGeometricBrownianMotion(TestCase):
         for _ in range(100):
             stock_test.evolve()
         self.assertAlmostEqual(100, stock_test.check_value(), delta=0.01)
+
+
+class TestStockTrendingGeometricBrownianMotion(TestCase):
+    def test_evolve(self):
+        stock_test = StockTrendingGeometricBrownianMotion('stock_trending_gbm_test', 100, 0.01, 0,
+                                                          trend_scale_param=0, trend_decay_param=1)
+        # stock price dynamic without trend
+        stock_test.mark_current_value_to_record(0)
+        for time in range(1, 5):
+            stock_test.evolve(time)
+            stock_test.mark_current_value_to_record(time)
+        self.assertAlmostEqual(100 * (np.exp(0.01) ** 4), stock_test.check_value(), delta=1e-6)
+
+        stock_test = StockTrendingGeometricBrownianMotion('stock_trending_gbm_test', 100, 0.01, 0,
+                                                          trend_scale_param=0.1, trend_decay_param=1)
+        # stock price dynamic with trend
+        stock_test.mark_current_value_to_record(0)
+        for time in range(1, 5):
+            stock_test.evolve(time)
+            stock_test.mark_current_value_to_record(time)
+        self.assertAlmostEqual(104.233315, stock_test.check_value(), delta=1e-6)
 
 
 class TestDerivative(TestCase):
