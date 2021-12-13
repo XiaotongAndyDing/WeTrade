@@ -1,8 +1,9 @@
 from typing import List, Dict
 from collections import OrderedDict
 from scipy.stats import norm
-
+import copy
 import numpy as np
+import pandas as pd
 
 
 class FinancialProduct(object):
@@ -21,7 +22,19 @@ class FinancialProduct(object):
         return self.initial_value
 
     def evolve(self, time=0):
+        """evolve is a method for Financial products to update its price """
         pass
+
+    def simulate_price_moves(self, time=0, simulation_horizon=1, num_of_trails=1e3):
+        """the price simulation method simulate future prices based on Monte Carlo Simulation"""
+        """It can price a financial product in P measure (Real measure, historical measure)"""
+        future_price_list = []
+        for _ in range(int(num_of_trails)):
+            tamp_asset_in_one_realization = copy.deepcopy(self)
+            for time_in_simulation in range(time + 1, time + int(simulation_horizon) + 1):
+                tamp_asset_in_one_realization.evolve(time=time_in_simulation)
+            future_price_list.append(tamp_asset_in_one_realization.current_value)
+        return future_price_list
 
     def mark_current_value_to_record(self, time):
         if time in self.price_record:
@@ -90,7 +103,7 @@ class StockGeometricBrownianMotion(FinancialProduct):
 
 
 class StockMeanRevertingGeometricBrownianMotion(FinancialProduct):
-    """Stocks with 2 components, Mean reverting component to a equilibrium price and
+    """Stocks with 2 components, Mean reverting component to an equilibrium price and
     Geometric Brownian Motion dynamics"""
 
     def __init__(self, name, initial_value, mu, sigma, equilibrium_price, mean_reversion_speed):
@@ -103,6 +116,29 @@ class StockMeanRevertingGeometricBrownianMotion(FinancialProduct):
     def evolve(self, time=0):
         self.current_value *= np.exp(np.random.normal(self.mu + self.mean_reversion_speed *
                                                       (self.equilibrium_price - self.current_value), self.sigma))
+
+
+class StockTrendingGeometricBrownianMotion(FinancialProduct):
+    """Stocks with 2 components, Trending component and Geometric Brownian Motion dynamics"""
+    """S(t+1)/ S(t) = N(mu + trend_scale_param * trend_factor, sigma)
+        trend_factor = sum of historical stock log returns, weighted by exponential decay factor
+        exponential decay factor = exp( - time difference * trend_decay_param)"""
+
+    def __init__(self, name, initial_value, mu, sigma, trend_scale_param, trend_decay_param):
+        super().__init__(name, initial_value)
+        self.mu = mu
+        self.sigma = sigma
+        self.trend_scale_param = trend_scale_param
+        self.trend_decay_param = trend_decay_param
+
+    def evolve(self, time=0):
+        df = pd.DataFrame(self.price_record.values(), columns=['price'])
+        df['time'] = self.price_record.keys()
+        df['log_ret'] = np.log(df.price) - np.log(df.price.shift(1))
+        df['time_diff'] = time - df['time']
+        df['trend_factor'] = df['log_ret'] * np.exp(-self.trend_decay_param * df['time_diff'])
+        self.current_value *= np.exp(np.random.normal(self.mu + self.trend_scale_param * df['trend_factor'].sum(),
+                                                      self.sigma))
 
 
 class Derivative(FinancialProduct):
@@ -138,6 +174,8 @@ class EuropeanCallOption(Option):
 
     def evolve(self, time=0):
         """https://www.investopedia.com/terms/b/blackscholes.asp"""
+        """The evolve method prices derivative under the Arbitrage Free Assumption"""
+        """In other words, it prices a financial product in Q measure"""
         if not hasattr(self.underlying, 'sigma'):
             raise Exception('underlying should have volatility parameter sigma')
 
