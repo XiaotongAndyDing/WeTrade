@@ -27,12 +27,25 @@ class TestMarket(TestCase):
         self.assertEqual(1, len(test_market._financial_product_dict['stock_test_2'].price_record))
         self.assertEqual(101, test_market._financial_product_dict['stock_test_2'].price_record[0])
 
+        self.assertEqual(100, test_market.check_record_value('stock_test_1', 0))
+        self.assertEqual(101, test_market.check_record_value('stock_test_2', 0))
+
         test_market.evolve()
         test_market.mark_current_value_to_record(1)
         self.assertEqual(2, len(test_market._financial_product_dict['stock_test_1'].price_record))
         self.assertEqual(100 + 1, test_market._financial_product_dict['stock_test_1'].price_record[1])
         self.assertEqual(2, len(test_market._financial_product_dict['stock_test_2'].price_record))
         self.assertEqual(101 + 2, test_market._financial_product_dict['stock_test_2'].price_record[1])
+
+        self.assertEqual(100, test_market.check_record_value('stock_test_1', 0))
+        self.assertEqual(101, test_market.check_record_value('stock_test_2', 0))
+        self.assertEqual(101, test_market.check_record_value('stock_test_1', 1))
+        self.assertEqual(103, test_market.check_record_value('stock_test_2', 1))
+
+    def test_check_initial_value(self):
+        test_market = Market([Stock('stock_test_1', 100, 1, 0), Stock('stock_test_2', 101, 2, 0)])
+        self.assertEqual(100, test_market.check_initial_value('stock_test_1'))
+        self.assertEqual(101, test_market.check_initial_value('stock_test_2'))
 
 
 class TestStock(TestCase):
@@ -51,6 +64,10 @@ class TestStock(TestCase):
         stock_test = Stock('stock_test', 100, 1, 0)
         stock_test.evolve()
         self.assertAlmostEqual(101, stock_test.check_value(), delta=1e-6)
+
+    def test_initial_value(self):
+        stock_test = Stock('stock_test', 100, 0, 0)
+        self.assertEqual(100, stock_test.check_initial_value())
 
     def test_mark_current_value_to_record(self):
         stock_test = Stock('stock_test', 100, 1, 0)

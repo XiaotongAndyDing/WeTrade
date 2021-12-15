@@ -132,7 +132,7 @@ class StockTrendingGeometricBrownianMotion(FinancialProduct):
         self.trend_decay_param = trend_decay_param
 
     def evolve(self, time=0):
-        df = pd.DataFrame(self.price_record.values(), columns=['price'])
+        df = pd.DataFrame(list(self.price_record.values()), columns=['price'])
         df['time'] = self.price_record.keys()
         df['log_ret'] = np.log(df.price) - np.log(df.price.shift(1))
         df['time_diff'] = time - df['time']
