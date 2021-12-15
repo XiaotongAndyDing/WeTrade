@@ -11,11 +11,15 @@ class FinancialProduct(object):
 
     def __init__(self, name, initial_value):
         self.name = name
+        self.initial_value = initial_value
         self.current_value = initial_value
         self.price_record = OrderedDict()
 
     def check_value(self):
         return self.current_value
+
+    def check_initial_value(self):
+        return self.initial_value
 
     def evolve(self, time=0):
         """evolve is a method for Financial products to update its price """
@@ -51,6 +55,21 @@ class Market(object):
             return self._financial_product_dict[financial_product_name].current_value
         else:
             raise Exception('The name to check is NOT in the market')
+
+    def check_initial_value(self, financial_product_name):
+        if financial_product_name in self._financial_product_dict:
+            return self._financial_product_dict[financial_product_name].initial_value
+        else:
+            raise Exception('The name to check initial value is NOT in the market')
+
+    def check_record_value(self, financial_product_name, time):
+        if financial_product_name in self._financial_product_dict:
+            if time in self._financial_product_dict[financial_product_name].price_record:
+                return self._financial_product_dict[financial_product_name].price_record[time]
+            else:
+                raise Exception(f'There has not been a price record in time {time}')
+        else:
+            raise Exception('The name to check record value is NOT in the market')
 
     def evolve(self, time=0):
         for financial_product in self._financial_product_dict.values():
