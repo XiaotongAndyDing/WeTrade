@@ -62,6 +62,33 @@ class Market(object):
         else:
             raise Exception('The name to check initial value is NOT in the market')
 
+    def check_delta(self, financial_product_name):
+        if financial_product_name in self._financial_product_dict:
+            if isinstance(self._financial_product_dict[financial_product_name], Option):
+                return self._financial_product_dict[financial_product_name].delta
+            else:
+                raise Exception('check_delta only supports Options')
+        else:
+            raise Exception('The name to check is NOT in the market')
+
+    def check_type(self, financial_product_name):
+        if financial_product_name == 'Cash':
+            return 'Cash'
+        if financial_product_name in self._financial_product_dict:
+            if isinstance(self._financial_product_dict[financial_product_name], Option):
+                return 'Option'
+            elif isinstance(self._financial_product_dict[financial_product_name], Stock) or \
+                    isinstance(self._financial_product_dict[financial_product_name], StockGeometricBrownianMotion) or\
+                    isinstance(self._financial_product_dict[financial_product_name],
+                               StockMeanRevertingGeometricBrownianMotion) or\
+                    isinstance(self._financial_product_dict[financial_product_name],
+                               StockTrendingGeometricBrownianMotion):
+                return 'Stock'
+            else:
+                return 'Others'
+        else:
+            raise Exception('The name to check is NOT in the market')
+
     def check_record_value(self, financial_product_name, time):
         if financial_product_name in self._financial_product_dict:
             if time in self._financial_product_dict[financial_product_name].price_record:
@@ -81,6 +108,7 @@ class Market(object):
 
 
 class Stock(FinancialProduct):
+    # TODO: Refactor Stock and Fix the inheritance structure of Stock
     def __init__(self, name, initial_value, mu, sigma):
         super().__init__(name, initial_value)
         self.mu = mu

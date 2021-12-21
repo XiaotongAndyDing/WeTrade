@@ -47,6 +47,23 @@ class TestMarket(TestCase):
         self.assertEqual(100, test_market.check_initial_value('stock_test_1'))
         self.assertEqual(101, test_market.check_initial_value('stock_test_2'))
 
+    def test_check_delta(self):
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)
+        test_market = Market([stock_test, option_test])
+
+        self.assertAlmostEqual(0.691, option_test.delta, delta=0.001)
+        self.assertAlmostEqual(0.691, test_market.check_delta('option_test'), delta=0.001)
+
+    def test_check_type(self):
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)
+        test_market = Market([stock_test, option_test])
+
+        self.assertEqual('Option', test_market.check_type('option_test'))
+        self.assertEqual('Stock', test_market.check_type('stock_gbm_test'))
+        self.assertEqual('Cash', 'Cash')
+
 
 class TestStock(TestCase):
     def test_evolve(self):

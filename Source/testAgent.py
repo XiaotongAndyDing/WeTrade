@@ -1,7 +1,9 @@
 from unittest import TestCase
 
-from Source.Agent import Agent, HumanTrader
-from Source.Market import Market, Stock
+import numpy as np
+
+from Source.Agent import Agent, HumanTrader, DeltaHedger
+from Source.Market import Market, Stock, StockGeometricBrownianMotion, EuropeanCallOption
 
 
 class TestAgent(TestCase):
@@ -127,3 +129,30 @@ class TestAgent(TestCase):
         self.assertEqual(1, agent_test._historical_performance[0].trading_hit_rate)
         self.assertEqual(0, agent_test._historical_performance[1].asset_return)
         self.assertEqual(0.5, agent_test._historical_performance[1].trading_hit_rate)
+
+
+class TestDeltaHedger(TestCase):
+    def test_evaluate_holding_asset_deltas(self):
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)
+        test_market = Market([stock_test, option_test])
+
+        asset_test = {'Cash': 1000, 'stock_gbm_test': 0, 'option_test': 1}  # agent holds an option
+        agent_test = DeltaHedger('agent_test', asset_test)
+
+        agent_test.evaluate_holding_asset_deltas(test_market)
+
+        self.assertEqual(1, len(agent_test.current_delta))
+        self.assertAlmostEqual(0.691, agent_test.current_delta['option_test'], delta=0.001)
+
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)
+        test_market = Market([stock_test, option_test])
+
+        asset_test = {'Cash': 1000, 'stock_gbm_test': 0, 'option_test': -1}  # agent shorts an option
+        agent_test = DeltaHedger('agent_test', asset_test)
+
+        agent_test.evaluate_holding_asset_deltas(test_market)
+
+        self.assertEqual(1, len(agent_test.current_delta))
+        self.assertAlmostEqual(-0.691, agent_test.current_delta['option_test'], delta=0.001)

@@ -3,6 +3,8 @@ from typing import Dict
 from Source import Market
 import random
 
+from Source.Market import Option
+
 
 class TradingHistoryRecord(object):
     def __init__(self, time, asset_name, unit):
@@ -154,3 +156,17 @@ class RandomAITrader(AITrader):
             else:
                 # hold
                 self._trading_intention[AI_asset_name] = 0
+
+
+class DeltaHedger(Agent):
+    # DeltaHedger is a trader who hedges her option portfolios. DeltaHedger could be either AI or human.
+    def __init__(self, name, initial_asset):
+        super().__init__(name, initial_asset)
+        self.current_delta = {}  # Dict[asset_name, total_delta]
+
+    def evaluate_holding_asset_deltas(self, market: Market):
+        self.current_delta = {}
+        for asset_name in self._asset:
+            if market.check_type(asset_name) == 'Option':
+                self.current_delta[asset_name] = market.check_delta(asset_name) * self._asset[asset_name]
+
