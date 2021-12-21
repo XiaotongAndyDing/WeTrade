@@ -62,7 +62,7 @@ class TestMarket(TestCase):
 
         self.assertEqual('Option', test_market.check_type('option_test'))
         self.assertEqual('Stock', test_market.check_type('stock_gbm_test'))
-        self.assertEqual('Cash', 'Cash')
+        self.assertEqual('Cash', test_market.check_type('Cash'))
 
 
 class TestStock(TestCase):
