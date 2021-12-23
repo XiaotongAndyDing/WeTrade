@@ -156,3 +156,23 @@ class TestDeltaHedger(TestCase):
 
         self.assertEqual(1, len(agent_test.current_delta))
         self.assertAlmostEqual(-0.691, agent_test.current_delta['option_test'], delta=0.001)
+
+    def test_generate_delta_hedging_plans(self):
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)
+        test_market = Market([stock_test, option_test])
+
+        asset_test = {'Cash': 10000, 'stock_gbm_test': 0, 'option_test': 10}  # agent holds an option
+        agent_test = DeltaHedger('agent_test', asset_test)
+
+        agent_test.generate_delta_hedging_plans(test_market)
+        self.assertEqual(1, len(agent_test.current_delta))
+        self.assertEqual(-7, agent_test._trading_intention['stock_gbm_test'])
+
+        asset_test = {'Cash': 10000, 'stock_gbm_test': 5, 'option_test': 10}  # agent holds an option
+        agent_test = DeltaHedger('agent_test', asset_test)
+
+        agent_test.generate_delta_hedging_plans(test_market)
+        self.assertEqual(1, len(agent_test.current_delta))
+        self.assertEqual(-12, agent_test._trading_intention['stock_gbm_test'])
+

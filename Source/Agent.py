@@ -40,6 +40,7 @@ class Agent(object):
         self._historical_performance = []  # List[HistoricalPerformanceRecord]
 
         self._holding_asset_value = 0
+        # TODO: Add Sanity Check, if an option is holding as an asset, its underlier should also be in asset
 
     def decision_making(self):
         # decision_making is the thinking process to make trading decisions.
@@ -103,6 +104,8 @@ class Agent(object):
             else:
                 # if Cash is not enough, cancel the trade and don't make record
                 pass
+
+        self._trading_intention = {}
 
     def evaluate_holding_asset_values(self, market: Market):
         holding_asset_value = 0
@@ -169,4 +172,12 @@ class DeltaHedger(Agent):
         for asset_name in self._asset:
             if market.check_type(asset_name) == 'Option':
                 self.current_delta[asset_name] = market.check_delta(asset_name) * self._asset[asset_name]
+
+    def generate_delta_hedging_plans(self, market: Market):
+        self.evaluate_holding_asset_deltas(market)
+        for asset_name in self._asset:
+            if market.check_type(asset_name) == 'Option':
+                underlier_name = market.check_underlier(asset_name)
+                target_quantity = -round(self.current_delta[asset_name])
+                self._trading_intention[underlier_name] = target_quantity - self._asset[underlier_name]
 

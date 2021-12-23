@@ -49,6 +49,10 @@ class Market(object):
             raise Exception('Multiple financial products have same name')
         else:
             self._financial_product_dict = {i.name: i for i in financial_product_list}
+        # Sanity Check: If an option is in market, its underlier should also be in a list
+        for financial_product in financial_product_list:
+            if self.check_type(financial_product.name) == 'Option':
+                assert financial_product.name in self._financial_product_dict
 
     def check_value(self, financial_product_name):
         if financial_product_name in self._financial_product_dict:
@@ -88,6 +92,12 @@ class Market(object):
                 return 'Others'
         else:
             raise Exception('The name to check is NOT in the market')
+
+    def check_underlier(self, financial_product_name):
+        if isinstance(self._financial_product_dict[financial_product_name], Option):
+            return self._financial_product_dict[financial_product_name].underlying.name
+        else:
+            Exception('Only Option has an underlier. The financial product you checked is NOT an Option.')
 
     def check_record_value(self, financial_product_name, time):
         if financial_product_name in self._financial_product_dict:

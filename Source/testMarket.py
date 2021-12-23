@@ -64,6 +64,13 @@ class TestMarket(TestCase):
         self.assertEqual('Stock', test_market.check_type('stock_gbm_test'))
         self.assertEqual('Cash', test_market.check_type('Cash'))
 
+    def test_check_underlier(self):
+        stock_test = StockGeometricBrownianMotion('stock_gbm_test', 100, 0, 1 / np.sqrt(252))
+        option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)
+        test_market = Market([stock_test, option_test])
+
+        self.assertEqual('stock_gbm_test', test_market.check_underlier('option_test'))
+
 
 class TestStock(TestCase):
     def test_evolve(self):
