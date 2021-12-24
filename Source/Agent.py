@@ -1,3 +1,4 @@
+import copy
 from collections import OrderedDict
 from typing import Dict
 
@@ -32,15 +33,15 @@ class Agent(object):
         if 'Cash' not in initial_asset:
             raise Exception('Cash is required in the initialization')
         else:
-            self._asset = initial_asset  # Dict[asset_name, num_of_units]
-            self._initial_asset = initial_asset
+            self._asset = copy.deepcopy(initial_asset)  # Dict[asset_name, num_of_units]
+            self._initial_asset = copy.deepcopy(initial_asset)
 
         self._trading_intention = {}  # Dict[asset_name, num_of_units_to_be_traded]
         # num_of_units_to_be_traded > 0 means we want to buy, < 0 means we want to sell
 
         self._trading_history = []  # List[TradingHistoryRecord]
 
-        self._historical_performance = OrderedDict()  # Dict[time, HistoricalPerformanceRecord]
+        self.historical_performance = OrderedDict()  # Dict[time, HistoricalPerformanceRecord]
 
         self._holding_asset_value = 0
         # TODO: Add Sanity Check, if an option is holding as an asset, its underlier should also be in asset
@@ -52,13 +53,13 @@ class Agent(object):
 
     def generate_performance_report(self, market: Market, time):
         self.evaluate_holding_asset_values(market)
-        self._historical_performance[time] = HistoricalPerformanceRecord(time, self.calculate_return(market),
-                                                                         self.calculate_hit_rate(market, time),
-                                                                         self._holding_asset_value,
-                                                                         self.calculate_cumulative_pnl(market),
-                                                                         self.calculate_one_day_pnl(market, time),
-                                                                         self.calculate_sharpe(),
-                                                                         self.calculate_max_drawdown())
+        self.historical_performance[time] = HistoricalPerformanceRecord(time, self.calculate_return(market),
+                                                                        self.calculate_hit_rate(market, time),
+                                                                        self._holding_asset_value,
+                                                                        self.calculate_cumulative_pnl(market),
+                                                                        self.calculate_one_day_pnl(market, time),
+                                                                        self.calculate_sharpe(),
+                                                                        self.calculate_max_drawdown())
 
     def calculate_init_asset_value(self, market: Market):
         init_asset_value = 0
@@ -84,13 +85,15 @@ class Agent(object):
         if time == 0:
             last_trading_day_asset_value = self.calculate_init_asset_value(market)
         else:
-            last_trading_day_asset_value = self._historical_performance[time-1].holding_asset_value
+            last_trading_day_asset_value = self.historical_performance[time - 1].holding_asset_value
         return self._holding_asset_value - last_trading_day_asset_value
 
     def calculate_hit_rate(self, market: Market, time):
         # hit rate describes the performance of trading in time horizon 1
         self.evaluate_holding_asset_values(market)
         win_num = 0
+        if len(self._trading_history) == 0:
+            return 0
         for trade_record in self._trading_history:
             now_price = market.check_record_value(trade_record.asset_name, trade_record.time)
             if trade_record.time + 1 > time:
@@ -123,8 +126,9 @@ class Agent(object):
                 self._asset[asset_name] += asset_trading_unit
                 if print_log:
                     print(f"{self._name}: "
-                          f" trades {asset_trading_unit} {asset_name} with Cash"
-                          f" ${current_price * asset_trading_unit:.3f}")
+                          f"{'buy' if asset_trading_unit > 0 else 'sell'} {abs(asset_trading_unit)} {asset_name}, Cash "
+                          f"{'-' if asset_trading_unit > 0 else '+'}"
+                          f" ${current_price * abs(asset_trading_unit):.3f}")
                 self._trading_history.append(TradingHistoryRecord(time, asset_name, asset_trading_unit))
             else:
                 # if Cash is not enough, cancel the trade and don't make record
@@ -163,10 +167,10 @@ class HumanTrader(Agent):
 
     def generate_performance_report(self, market: Market, time):
         super().generate_performance_report(market, time)
-        print(f"{self._name}: trade_return: {self._historical_performance[-1].asset_return}")
-        print(f"{self._name}: trade_hit_rate: {self._historical_performance[-1].trading_hit_rate}")
-        print(f"{self._name}: trade_sharpe: {self._historical_performance[-1].asset_sharpe_ratio}")
-        print(f"{self._name}: trade_max_drawdown: {self._historical_performance[-1].asset_max_drawdown}")
+        print(f"{self._name}: trade_return: {self.historical_performance[-1].asset_return}")
+        print(f"{self._name}: trade_hit_rate: {self.historical_performance[-1].trading_hit_rate}")
+        print(f"{self._name}: trade_sharpe: {self.historical_performance[-1].asset_sharpe_ratio}")
+        print(f"{self._name}: trade_max_drawdown: {self.historical_performance[-1].asset_max_drawdown}")
 
 
 class AITrader(Agent):

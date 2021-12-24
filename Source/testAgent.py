@@ -147,9 +147,9 @@ class TestAgent(TestCase):
         market_test.mark_current_value_to_record(1)
 
         agent_test.generate_performance_report(market_test, 1)
-        self.assertEqual(2, len(agent_test._historical_performance))
-        self.assertEqual(0.005, agent_test._historical_performance[1].asset_return)
-        self.assertEqual(1, agent_test._historical_performance[1].trading_hit_rate)
+        self.assertEqual(2, len(agent_test.historical_performance))
+        self.assertEqual(0.005, agent_test.historical_performance[1].asset_return)
+        self.assertEqual(1, agent_test.historical_performance[1].trading_hit_rate)
 
         agent_test._trading_intention = {'StockTest': -5}
         agent_test.trade(market_test, 1)
@@ -158,11 +158,11 @@ class TestAgent(TestCase):
         market_test.mark_current_value_to_record(2)
 
         agent_test.generate_performance_report(market_test, 2)
-        self.assertEqual(3, len(agent_test._historical_performance))
-        self.assertEqual(0.005, agent_test._historical_performance[1].asset_return)
-        self.assertEqual(1, agent_test._historical_performance[1].trading_hit_rate)
-        self.assertEqual(0, agent_test._historical_performance[2].asset_return)
-        self.assertEqual(0.5, agent_test._historical_performance[2].trading_hit_rate)
+        self.assertEqual(3, len(agent_test.historical_performance))
+        self.assertEqual(0.005, agent_test.historical_performance[1].asset_return)
+        self.assertEqual(1, agent_test.historical_performance[1].trading_hit_rate)
+        self.assertEqual(0.005, agent_test.historical_performance[2].asset_return)
+        self.assertEqual(0.5, agent_test.historical_performance[2].trading_hit_rate)
 
 
 class TestDeltaHedger(TestCase):
