@@ -1,9 +1,8 @@
+from collections import OrderedDict
 from typing import Dict
 
 from Source import Market
 import random
-
-from Source.Market import Option
 
 
 class TradingHistoryRecord(object):
@@ -14,10 +13,14 @@ class TradingHistoryRecord(object):
 
 
 class HistoricalPerformanceRecord(object):
-    def __init__(self, time, asset_return, trading_hit_rate, asset_sharpe_ratio, asset_max_drawdown):
+    def __init__(self, time, asset_return, trading_hit_rate, holding_asset_value, cumulative_pnl, one_day_pnl,
+                 asset_sharpe_ratio, asset_max_drawdown):
         self.time = time
         self.asset_return = asset_return
         self.trading_hit_rate = trading_hit_rate
+        self.holding_asset_value = holding_asset_value
+        self.cumulative_pnl = cumulative_pnl
+        self.one_day_pnl = one_day_pnl
         self.asset_sharpe_ratio = asset_sharpe_ratio
         self.asset_max_drawdown = asset_max_drawdown
 
@@ -37,7 +40,7 @@ class Agent(object):
 
         self._trading_history = []  # List[TradingHistoryRecord]
 
-        self._historical_performance = []  # List[HistoricalPerformanceRecord]
+        self._historical_performance = OrderedDict()  # Dict[time, HistoricalPerformanceRecord]
 
         self._holding_asset_value = 0
         # TODO: Add Sanity Check, if an option is holding as an asset, its underlier should also be in asset
@@ -48,12 +51,14 @@ class Agent(object):
         pass
 
     def generate_performance_report(self, market: Market, time):
-        self._historical_performance.append(
-            HistoricalPerformanceRecord(time,
-                                        self.calculate_return(market),
-                                        self.calculate_hit_rate(market),
-                                        self.calculate_sharpe(),
-                                        self.calculate_max_drawdown()))
+        self.evaluate_holding_asset_values(market)
+        self._historical_performance[time] = HistoricalPerformanceRecord(time, self.calculate_return(market),
+                                                                         self.calculate_hit_rate(market, time),
+                                                                         self._holding_asset_value,
+                                                                         self.calculate_cumulative_pnl(market),
+                                                                         self.calculate_one_day_pnl(market, time),
+                                                                         self.calculate_sharpe(),
+                                                                         self.calculate_max_drawdown())
 
     def calculate_init_asset_value(self, market: Market):
         init_asset_value = 0
@@ -69,13 +74,30 @@ class Agent(object):
         init_asset_value = self.calculate_init_asset_value(market)
         return (self._holding_asset_value - init_asset_value) / init_asset_value
 
-    def calculate_hit_rate(self, market: Market):
+    def calculate_cumulative_pnl(self, market: Market):
+        self.evaluate_holding_asset_values(market)
+        init_asset_value = self.calculate_init_asset_value(market)
+        return self._holding_asset_value - init_asset_value
+
+    def calculate_one_day_pnl(self, market: Market, time):
+        self.evaluate_holding_asset_values(market)
+        if time == 0:
+            last_trading_day_asset_value = self.calculate_init_asset_value(market)
+        else:
+            last_trading_day_asset_value = self._historical_performance[time-1].holding_asset_value
+        return self._holding_asset_value - last_trading_day_asset_value
+
+    def calculate_hit_rate(self, market: Market, time):
         # hit rate describes the performance of trading in time horizon 1
         self.evaluate_holding_asset_values(market)
         win_num = 0
         for trade_record in self._trading_history:
             now_price = market.check_record_value(trade_record.asset_name, trade_record.time)
+            if trade_record.time + 1 > time:
+                # TODO: temp fix: cannot access future price
+                continue
             future_price = market.check_record_value(trade_record.asset_name, trade_record.time + 1)
+
             # price rises, buying and holding would win
             if now_price < future_price and trade_record.unit >= 0:
                 win_num += 1

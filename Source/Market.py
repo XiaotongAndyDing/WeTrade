@@ -209,6 +209,7 @@ class EuropeanCallOption(Option):
     def __init__(self, name, underlyings, strike, expiry):
         super().__init__(name, underlyings, strike, expiry)
         self.evolve(0)
+        self.initial_value = self.current_value
 
     def evolve(self, time=0):
         """https://www.investopedia.com/terms/b/blackscholes.asp"""
@@ -246,6 +247,7 @@ class EuropeanPutOption(Option):
     def __init__(self, name, underlyings, strike, expiry):
         super().__init__(name, underlyings, strike, expiry)
         self.evolve(0)
+        self.initial_value = self.current_value
 
     def evolve(self, time=0):
         if not hasattr(self.underlying, 'sigma'):

@@ -244,6 +244,7 @@ class TestEuropeanCallOption(TestCase):
         option_test = EuropeanCallOption('option_test', [stock_test], 100, 252)  # 252 business days per year
 
         self.assertAlmostEqual(38.292, option_test.current_value, delta=0.001)
+        self.assertAlmostEqual(38.292, option_test.initial_value, delta=0.001)
         self.assertAlmostEqual(0.691, option_test.delta, delta=0.001)
         self.assertAlmostEqual(0.004, option_test.gamma, delta=0.001)
         self.assertAlmostEqual(35.207, option_test.vega, delta=0.001)
@@ -309,6 +310,7 @@ class TestEuropeanPutOption(TestCase):
         option_test = EuropeanPutOption('option_test', [stock_test], 100, 252)  # 252 business days per year
 
         self.assertAlmostEqual(38.292, option_test.current_value, delta=0.001)
+        self.assertAlmostEqual(38.292, option_test.initial_value, delta=0.001)
         self.assertAlmostEqual(-0.309, option_test.delta, delta=0.001)
         self.assertAlmostEqual(0.004, option_test.gamma, delta=0.001)
         self.assertAlmostEqual(35.207, option_test.vega, delta=0.001)
