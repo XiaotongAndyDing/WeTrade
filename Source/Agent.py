@@ -93,13 +93,16 @@ class Agent(object):
     def calculate_max_drawdown(self):
         return None
 
-    def trade(self, market: Market, time):
+    def trade(self, market: Market, time, print_log=False):
         for asset_name, asset_trading_unit in self._trading_intention.items():
             current_price = market.check_value(asset_name)
             if self._asset['Cash'] >= current_price * asset_trading_unit:
                 self._asset['Cash'] -= current_price * asset_trading_unit
                 self._asset[asset_name] += asset_trading_unit
-
+                if print_log:
+                    print(f"{self._name}: "
+                          f" trades {asset_trading_unit} {asset_name} with Cash"
+                          f" ${current_price * asset_trading_unit:.3f}")
                 self._trading_history.append(TradingHistoryRecord(time, asset_name, asset_trading_unit))
             else:
                 # if Cash is not enough, cancel the trade and don't make record
@@ -107,14 +110,23 @@ class Agent(object):
 
         self._trading_intention = {}
 
-    def evaluate_holding_asset_values(self, market: Market):
+    def evaluate_holding_asset_values(self, market: Market, print_log=False):
         holding_asset_value = 0
+        if print_log:
+            print(f"{self._name}, Holding:")
         for asset_name in self._asset:
             if asset_name == 'Cash':
                 holding_asset_value += self._asset[asset_name]
+                if print_log:
+                    print(f"Cash: ${self._asset[asset_name]}")
             else:
                 holding_asset_value += market.check_value(asset_name) * self._asset[asset_name]
+                if print_log:
+                    print(f"{asset_name}: {self._asset[asset_name]} * ${market.check_value(asset_name):.3f} ="
+                          f" ${market.check_value(asset_name) * self._asset[asset_name]:.3f}")
         self._holding_asset_value = holding_asset_value
+        if print_log:
+            print(f"Total: ${holding_asset_value:.3f}")
 
 
 class HumanTrader(Agent):
@@ -179,5 +191,6 @@ class DeltaHedger(Agent):
             if market.check_type(asset_name) == 'Option':
                 underlier_name = market.check_underlier(asset_name)
                 target_quantity = -round(self.current_delta[asset_name])
-                self._trading_intention[underlier_name] = target_quantity - self._asset[underlier_name]
+                if target_quantity != self._asset[underlier_name]:
+                    self._trading_intention[underlier_name] = target_quantity - self._asset[underlier_name]
 
