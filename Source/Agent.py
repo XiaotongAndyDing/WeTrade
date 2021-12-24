@@ -144,7 +144,7 @@ class Agent(object):
             if asset_name == 'Cash':
                 holding_asset_value += self._asset[asset_name]
                 if print_log:
-                    print(f"Cash: ${self._asset[asset_name]}")
+                    print(f"Cash: ${self._asset[asset_name]:.3f}")
             else:
                 holding_asset_value += market.check_value(asset_name) * self._asset[asset_name]
                 if print_log:

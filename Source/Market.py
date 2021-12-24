@@ -199,6 +199,7 @@ class Option(Derivative):
         self.gamma = 0
         self.vega = 0
         self.underlying = None
+        self.expiry_value = None
         if len(underlyings) != 1:
             raise Exception('Option has exactly one underlying')
         else:
@@ -223,12 +224,17 @@ class EuropeanCallOption(Option):
         # TODO: A little bit confusing. Stock Sigma is unit in daily vol while option pricing is using annualized vol
 
         if time_to_maturity < 0:
-            raise Exception('Option has expired')
+            self.delta = 0
+            self.gamma = 0
+            self.vega = 0
+            self.current_value = self.expiry_value
+            return
         elif time_to_maturity < 1e-6:
             self.delta = 0
             self.gamma = 0
             self.vega = 0
             self.current_value = max(0, self.underlying.current_value - self.strike)
+            self.expiry_value = self.current_value
             return
 
         d_1 = (np.log(self.underlying.current_value / self.strike) +
@@ -257,12 +263,17 @@ class EuropeanPutOption(Option):
         annual_volatility = self.underlying.sigma * np.sqrt(FinancialProduct.BUSINESS_DAYS_PER_YEAR)
 
         if time_to_maturity < 0:
-            raise Exception('Option has expired')
+            self.delta = 0
+            self.gamma = 0
+            self.vega = 0
+            self.current_value = self.expiry_value
+            return
         elif time_to_maturity < 1e-6:
             self.delta = 0
             self.gamma = 0
             self.vega = 0
             self.current_value = max(0, self.strike - self.underlying.current_value)
+            self.expiry_value = self.current_value
             return
 
         d_1 = (np.log(self.underlying.current_value / self.strike) +
