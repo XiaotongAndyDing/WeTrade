@@ -140,6 +140,24 @@ class StockGeometricBrownianMotion(FinancialProduct):
         self.current_value *= np.exp(np.random.normal(self.mu, self.sigma))
 
 
+class MockStockGeometricBrownianMotion(FinancialProduct):
+    """Stocks with Geometric Brownian Motion dynamics, could observe next moves"""
+    """The class is used for optimal sizing researching using simulation"""
+
+    def __init__(self, name, initial_value, mu, sigma):
+        super().__init__(name, initial_value)
+        self.mu = mu
+        self.sigma = sigma
+        self.next_period_value = initial_value * np.exp(np.random.normal(self.mu, self.sigma))
+
+    def evolve(self, time=0):
+        self.current_value = self.next_period_value
+        self.next_period_value = self.current_value * np.exp(np.random.normal(self.mu, self.sigma))
+
+    def observe(self, observation_std):
+        return self.next_period_value + np.random.normal(0, observation_std)
+
+
 class StockMeanRevertingGeometricBrownianMotion(FinancialProduct):
     """Stocks with 2 components, Mean reverting component to an equilibrium price and
     Geometric Brownian Motion dynamics"""

@@ -1,7 +1,8 @@
 from unittest import TestCase
 import numpy as np
 from Source.Market import Stock, Market, StockGeometricBrownianMotion, StockMeanRevertingGeometricBrownianMotion, \
-    Derivative, Option, EuropeanCallOption, EuropeanPutOption, StockTrendingGeometricBrownianMotion
+    Derivative, Option, EuropeanCallOption, EuropeanPutOption, StockTrendingGeometricBrownianMotion, \
+    MockStockGeometricBrownianMotion
 
 
 class TestMarket(TestCase):
@@ -180,6 +181,15 @@ class TestStockTrendingGeometricBrownianMotion(TestCase):
             stock_test.evolve(time)
             stock_test.mark_current_value_to_record(time)
         self.assertAlmostEqual(104.233315, stock_test.check_value(), delta=1e-6)
+
+
+class TestMockStockGeometricBrownianMotion(TestCase):
+    def test_evolve(self):
+        stock_test = MockStockGeometricBrownianMotion('mock_stock_gbm_test', 100, 0, 0.01)
+        self.assertEqual(100, stock_test.current_value)
+        next_day_value = stock_test.next_period_value
+        stock_test.evolve(1)
+        self.assertEqual(next_day_value, stock_test.current_value)
 
 
 class TestDerivative(TestCase):
