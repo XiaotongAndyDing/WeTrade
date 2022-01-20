@@ -1,6 +1,7 @@
 import copy
 from collections import OrderedDict
 from typing import Dict
+import pandas as pd
 
 from Source import Market
 import random
@@ -42,6 +43,7 @@ class Agent(object):
         self._trading_history = []  # List[TradingHistoryRecord]
 
         self.historical_performance = OrderedDict()  # Dict[time, HistoricalPerformanceRecord]
+        self.historical_holding_values = OrderedDict()  # Dict[time, float]
 
         self._holding_asset_value = 0
         # TODO: Add Sanity Check, if an option is holding as an asset, its underlier should also be in asset
@@ -52,14 +54,34 @@ class Agent(object):
         pass
 
     def generate_performance_report(self, market: Market, time):
+        # TODO: Refactor performance report to calculate performance only at the end of simulation,
+        #  not each step in simulation
+        # self.evaluate_holding_asset_values(market)
+        # self.historical_performance[time] = HistoricalPerformanceRecord(time, self.calculate_return(market),
+        #                                                                 self.calculate_hit_rate(market, time),
+        #                                                                 self._holding_asset_value,
+        #                                                                 self.calculate_cumulative_pnl(market),
+        #                                                                 self.calculate_one_day_pnl(market, time),
+        #                                                                 self.calculate_sharpe(),
+        #                                                                 self.calculate_max_drawdown())
+        pass
+
+    def mark_holding_values(self, market: Market, time):
         self.evaluate_holding_asset_values(market)
-        self.historical_performance[time] = HistoricalPerformanceRecord(time, self.calculate_return(market),
-                                                                        self.calculate_hit_rate(market, time),
-                                                                        self._holding_asset_value,
-                                                                        self.calculate_cumulative_pnl(market),
-                                                                        self.calculate_one_day_pnl(market, time),
-                                                                        self.calculate_sharpe(),
-                                                                        self.calculate_max_drawdown())
+        self.historical_holding_values[time] = self._holding_asset_value
+
+    def calculate_average_return(self):
+        return pd.Series(list(self.historical_holding_values.values())).pct_change().mean()
+
+    def calculate_std_return(self):
+        return pd.Series(list(self.historical_holding_values.values())).pct_change().std()
+
+    def calculate_sharpe_ratio(self):
+        return self.calculate_average_return() / self.calculate_std_return()
+
+    def calculate_max_drawdown(self):
+        historical_holding_value_series = pd.Series(list(self.historical_holding_values.values()))
+        return (historical_holding_value_series.cummax() - historical_holding_value_series).max()
 
     def calculate_init_asset_value(self, market: Market):
         init_asset_value = 0
@@ -111,12 +133,6 @@ class Agent(object):
             elif trade_record.unit == 0:
                 win_num += 1
         return win_num / len(self._trading_history)
-
-    def calculate_sharpe(self):
-        return None
-
-    def calculate_max_drawdown(self):
-        return None
 
     def trade(self, market: Market, time, print_log=False):
         for asset_name, asset_trading_unit in self._trading_intention.items():
