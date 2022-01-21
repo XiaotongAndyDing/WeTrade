@@ -99,6 +99,13 @@ class Market(object):
         else:
             Exception('Only Option has an underlier. The financial product you checked is NOT an Option.')
 
+    def check_prediction(self, financial_product_name, observation_std):
+        if isinstance(self._financial_product_dict[financial_product_name], MockStockGeometricBrownianMotion):
+            return self._financial_product_dict[financial_product_name].observe(observation_std)
+        else:
+            Exception('Only Mock Financial Product can be predicted.'
+                      ' The financial product you checked is NOT an Mock.')
+
     def check_record_value(self, financial_product_name, time):
         if financial_product_name in self._financial_product_dict:
             if time in self._financial_product_dict[financial_product_name].price_record:
@@ -155,7 +162,7 @@ class MockStockGeometricBrownianMotion(FinancialProduct):
         self.next_period_value = self.current_value * np.exp(np.random.normal(self.mu, self.sigma))
 
     def observe(self, observation_std):
-        return self.next_period_value + np.random.normal(0, observation_std)
+        return self.next_period_value * np.exp(np.random.normal(0, observation_std))
 
 
 class StockMeanRevertingGeometricBrownianMotion(FinancialProduct):
