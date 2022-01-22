@@ -66,57 +66,6 @@ class TestAgent(TestCase):
         agent_test.evaluate_holding_asset_values(market_test)
         self.assertEqual(1005, agent_test._holding_asset_value)
 
-    @unittest.skip("waiting for refactoring")
-    def test_calculate_return(self):
-        asset_test = {'Cash': 1000, 'StockTest': 0}
-        agent_test = Agent('agent_test', asset_test)
-
-        market_test = Market([Stock('StockTest', 100, 1, 0)])
-        agent_test._trading_intention = {'StockTest': 5}
-        agent_test.trade(market_test, 0)
-        market_test.evolve(1)
-
-        self.assertEqual(5 / 1000, agent_test.calculate_return(market_test))
-
-        market_test.evolve(2)
-        self.assertEqual(10 / 1000, agent_test.calculate_return(market_test))
-
-    @unittest.skip("waiting for refactoring")
-    def test_calculate_cumulative_pnl(self):
-        asset_test = {'Cash': 1000, 'StockTest': 0}
-        agent_test = Agent('agent_test', asset_test)
-
-        market_test = Market([Stock('StockTest', 100, 1, 0)])
-        agent_test._trading_intention = {'StockTest': 5}
-        agent_test.trade(market_test, 0)
-        market_test.evolve(1)
-
-        self.assertEqual(5, agent_test.calculate_cumulative_pnl(market_test))
-
-        market_test.evolve(2)
-        self.assertEqual(10, agent_test.calculate_cumulative_pnl(market_test))
-
-    @unittest.skip("waiting for refactoring")
-    def test_calculate_one_day_pnl(self):
-        asset_test = {'Cash': 1000, 'StockTest': 0}
-        agent_test = Agent('agent_test', asset_test)
-
-        market_test = Market([Stock('StockTest', 100, 1, 0)])
-        market_test.mark_current_value_to_record(0)
-        agent_test._trading_intention = {'StockTest': 5}
-        agent_test.trade(market_test, 0)
-        agent_test.generate_performance_report(market_test, 0)
-
-        market_test.evolve(1)
-        market_test.mark_current_value_to_record(1)
-        agent_test.generate_performance_report(market_test, 1)
-
-        self.assertEqual(5, agent_test.calculate_one_day_pnl(market_test, 1))
-
-        market_test.evolve(2)
-        self.assertEqual(10, agent_test.calculate_one_day_pnl(market_test, 1))
-
-    @unittest.skip("waiting for refactoring")
     def test_hit_rate(self):
         asset_test = {'Cash': 1000, 'StockTest': 0}
         agent_test = Agent('agent_test', asset_test)
@@ -125,50 +74,20 @@ class TestAgent(TestCase):
         market_test.mark_current_value_to_record(0)
         agent_test._trading_intention = {'StockTest': 5}
         agent_test.trade(market_test, 0)
+        agent_test.mark_holding_values(market_test, 0)
 
         market_test.evolve(1)
         market_test.mark_current_value_to_record(1)
-
-        self.assertEqual(1, agent_test.calculate_hit_rate(market_test, 1))
-
-        agent_test._trading_intention = {'StockTest': -1}
+        agent_test.mark_holding_values(market_test, 1)
+        agent_test._trading_intention = {'StockTest': -10}
         agent_test.trade(market_test, 1)
+
+        self.assertEqual(1, agent_test.calculate_hit_rate())
 
         market_test.evolve(2)
         market_test.mark_current_value_to_record(2)
-        self.assertEqual(0.5, agent_test.calculate_hit_rate(market_test, 2))
-
-    @unittest.skip("waiting for refactoring")
-    def test_generate_performance_report(self):
-        asset_test = {'Cash': 1000, 'StockTest': 0}
-        agent_test = Agent('agent_test', asset_test)
-
-        market_test = Market([Stock('StockTest', 100, 1, 0)])
-        market_test.mark_current_value_to_record(0)
-        agent_test._trading_intention = {'StockTest': 5}
-        agent_test.trade(market_test, 0)
-        agent_test.generate_performance_report(market_test, 0)
-
-        market_test.evolve(1)
-        market_test.mark_current_value_to_record(1)
-
-        agent_test.generate_performance_report(market_test, 1)
-        self.assertEqual(2, len(agent_test.historical_performance))
-        self.assertEqual(0.005, agent_test.historical_performance[1].asset_return)
-        self.assertEqual(1, agent_test.historical_performance[1].trading_hit_rate)
-
-        agent_test._trading_intention = {'StockTest': -5}
-        agent_test.trade(market_test, 1)
-
-        market_test.evolve(2)
-        market_test.mark_current_value_to_record(2)
-
-        agent_test.generate_performance_report(market_test, 2)
-        self.assertEqual(3, len(agent_test.historical_performance))
-        self.assertEqual(0.005, agent_test.historical_performance[1].asset_return)
-        self.assertEqual(1, agent_test.historical_performance[1].trading_hit_rate)
-        self.assertEqual(0.005, agent_test.historical_performance[2].asset_return)
-        self.assertEqual(0.5, agent_test.historical_performance[2].trading_hit_rate)
+        agent_test.mark_holding_values(market_test, 2)
+        self.assertEqual(0.5, agent_test.calculate_hit_rate())
 
     def test_statistics(self):
         asset_test = {'Cash': 10000, 'StockTest': 0}

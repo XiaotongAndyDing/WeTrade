@@ -53,19 +53,6 @@ class Agent(object):
         # Agent would save her decision in self._trading_intention
         pass
 
-    def generate_performance_report(self, market: Market, time):
-        # TODO: Refactor performance report to calculate performance only at the end of simulation,
-        #  not each step in simulation
-        # self.evaluate_holding_asset_values(market)
-        # self.historical_performance[time] = HistoricalPerformanceRecord(time, self.calculate_return(market),
-        #                                                                 self.calculate_hit_rate(market, time),
-        #                                                                 self._holding_asset_value,
-        #                                                                 self.calculate_cumulative_pnl(market),
-        #                                                                 self.calculate_one_day_pnl(market, time),
-        #                                                                 self.calculate_sharpe(),
-        #                                                                 self.calculate_max_drawdown())
-        pass
-
     def mark_holding_values(self, market: Market, time):
         self.evaluate_holding_asset_values(market)
         self.historical_holding_values[time] = self._holding_asset_value
@@ -92,47 +79,11 @@ class Agent(object):
                 init_asset_value += market.check_initial_value(asset_name) * asset_unit
         return init_asset_value
 
-    def calculate_return(self, market: Market):
-        self.evaluate_holding_asset_values(market)
-        init_asset_value = self.calculate_init_asset_value(market)
-        return (self._holding_asset_value - init_asset_value) / init_asset_value
-
-    def calculate_cumulative_pnl(self, market: Market):
-        self.evaluate_holding_asset_values(market)
-        init_asset_value = self.calculate_init_asset_value(market)
-        return self._holding_asset_value - init_asset_value
-
-    def calculate_one_day_pnl(self, market: Market, time):
-        self.evaluate_holding_asset_values(market)
-        if time == 0:
-            last_trading_day_asset_value = self.calculate_init_asset_value(market)
-        else:
-            last_trading_day_asset_value = self.historical_performance[time - 1].holding_asset_value
-        return self._holding_asset_value - last_trading_day_asset_value
-
-    def calculate_hit_rate(self, market: Market, time):
-        # hit rate describes the performance of trading in time horizon 1
-        self.evaluate_holding_asset_values(market)
-        win_num = 0
-        if len(self._trading_history) == 0:
-            return 0
-        for trade_record in self._trading_history:
-            now_price = market.check_record_value(trade_record.asset_name, trade_record.time)
-            if trade_record.time + 1 > time:
-                # TODO: temp fix: cannot access future price
-                continue
-            future_price = market.check_record_value(trade_record.asset_name, trade_record.time + 1)
-
-            # price rises, buying and holding would win
-            if now_price < future_price and trade_record.unit >= 0:
-                win_num += 1
-            # price drops, selling would win
-            elif now_price > future_price and trade_record.unit < 0:
-                win_num += 1
-            # price unchanged, holding would win
-            elif trade_record.unit == 0:
-                win_num += 1
-        return win_num / len(self._trading_history)
+    def calculate_hit_rate(self):
+        if len(self.historical_holding_values) == 1:
+            return 1
+        return (pd.Series(list(self.historical_holding_values.values())).pct_change().iloc[1:] >= 0).sum() /\
+               (len(self.historical_holding_values) - 1)
 
     def trade(self, market: Market, time, print_log=False):
         for asset_name, asset_trading_unit in self._trading_intention.items():
